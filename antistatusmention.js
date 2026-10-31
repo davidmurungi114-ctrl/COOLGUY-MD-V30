@@ -1,24 +1,38 @@
 const fs = require('fs');
 const path = require('path');
 const dbPath = path.join(__dirname, '../lib/antistatusmention.json');
+
 function loadDB() {
-    try { if (fs.existsSync(dbPath)) { return JSON.parse(fs.readFileSync(dbPath)); } } catch {}
+    try { 
+        if (fs.existsSync(dbPath)) { 
+            return JSON.parse(fs.readFileSync(dbPath)); 
+        } 
+    } catch {}
     return {};
 }
+
 function saveDB(data) {
-    try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch {}
+    try { 
+        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); 
+    } catch {}
 }
+
 async function antistatusmentionCommand(sock, chatId, message, q) {
     const isGroup = chatId.endsWith('@g.us');
-    if (!isGroup) { return await sock.sendMessage(chatId, { text: "❌ Group only!" }); }
+    if (!isGroup) { 
+        return await sock.sendMessage(chatId, { text: "❌ Group only!" }); 
+    }
     try {
         const groupMetadata = await sock.groupMetadata(chatId);
         const participants = groupMetadata.participants;
         const senderId = message.key.participant || message.key.remoteJid;
         const sender = participants.find(p => p.id === senderId);
-        if (!sender?.admin && !message.key.fromMe) { return await sock.sendMessage(chatId, { text: "❌ Only admins!" }); }
+        if (!sender?.admin && !message.key.fromMe) { 
+            return await sock.sendMessage(chatId, { text: "❌ Only admins!" }); 
+        }
         let db = loadDB();
         const args = (q || "").toLowerCase().trim();
+
         if (args.includes('delete') && args.includes('on')) {
             db[chatId] = { enabled: true, action: 'delete' };
             saveDB(db);
@@ -50,6 +64,7 @@ async function antistatusmentionCommand(sock, chatId, message, q) {
         await sock.sendMessage(chatId, { text: "Error: " + e.message });
     }
 }
+
 async function checkAntiStatusMention(sock, chatId, m) {
     try {
         if (!chatId.endsWith('@g.us')) return false;
@@ -94,5 +109,6 @@ async function checkAntiStatusMention(sock, chatId, m) {
         return false;
     }
 }
+
 module.exports = antistatusmentionCommand;
 module.exports.checkAntiStatusMention = checkAntiStatusMention;
